@@ -1,0 +1,19 @@
+{
+  "name": "project-cockpit",
+  "version": "1.1.1",
+  "description": "A local-first, static project dashboard with evidence-based weighted milestone progress.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "playwright test",
+    "build:example": "node scripts/build-example.js",
+    "zip": "node scripts/zip.js"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.0",
+    "@playwright/test": "1.56.1"
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "description": "Fictional projects with hand-computed expected progress. Evaluated at a fixed 'now'.",
+  "now": "2026-06-15T12:00:00Z",
+  "document": {
+    "schema": "project-cockpit",
+    "version": 1,
+    "projects": [
+      {
+        "id": "all-counted",
+        "name": "Fixture: all counted",
+        "status": "active",
+        "milestones": [
+          { "id": "a1", "title": "First half", "weight": 30, "status": "complete", "verifiedAt": "2026-06-10T12:00:00Z", "evidence": [{ "label": "A1", "url": "https://example.com/a1" }] },
+          { "id": "a2", "title": "Second half", "weight": 70, "status": "complete", "verifiedAt": "2026-06-12T09:30:00Z", "evidence": [{ "label": "A2", "url": "http://example.com/a2" }] }
+        ]
+      },
+      {
+        "id": "exclusions",
+        "name": "Fixture: exclusions",
+        "status": "active",
+        "milestones": [
+          { "id": "b1", "title": "Counted despite resolved blocker", "weight": 10, "status": "complete", "verifiedAt": "2026-06-14T12:00:00Z", "evidence": [{ "label": "B1", "url": "https://example.com/b1" }] },
+          { "id": "b2", "title": "Blocked with evidence", "weight": 20, "status": "blocked", "verifiedAt": "2026-06-14T12:00:00Z", "evidence": [{ "label": "B2", "url": "https://example.com/b2" }] },
+          { "id": "b3", "title": "Untested with evidence", "weight": 30, "status": "untested", "verifiedAt": "2026-06-14T12:00:00Z", "evidence": [{ "label": "B3", "url": "https://example.com/b3" }] },
+          { "id": "b4", "title": "Complete but unverified", "weight": 15, "status": "complete", "verifiedAt": null, "evidence": [{ "label": "B4", "url": "https://example.com/b4" }] },
+          { "id": "b5", "title": "Complete without evidence", "weight": 5, "status": "complete", "verifiedAt": "2026-06-14T12:00:00Z", "evidence": [] },
+          { "id": "b6", "title": "Complete with open blocker", "weight": 20, "status": "complete", "verifiedAt": "2026-06-14T12:00:00Z", "evidence": [{ "label": "B6", "url": "https://example.com/b6" }] }
+        ],
+        "blockers": [
+          { "id": "bk-open", "description": "Open blocker linked to b6", "milestoneId": "b6", "resolved": false },
+          { "id": "bk-resolved", "description": "Resolved blocker linked to b1", "milestoneId": "b1", "resolved": true }
+        ]
+      },
+      {
+        "id": "decimals",
+        "name": "Fixture: decimal weights",
+        "status": "active",
+        "milestones": [
+          { "id": "c1", "title": "Tenth", "weight": 0.1, "status": "complete", "verifiedAt": "2026-06-13T12:00:00Z", "evidence": [{ "label": "C1", "url": "https://example.com/c1" }] },
+          { "id": "c2", "title": "Fifth", "weight": 0.2, "status": "complete", "verifiedAt": "2026-06-13T12:00:00Z", "evidence": [{ "label": "C2", "url": "https://example.com/c2" }] },
+          { "id": "c3", "title": "Rest", "weight": 0.7, "status": "in_progress" }
+        ]
+      },
+      {
+        "id": "round-down",
+        "name": "Fixture: rounds down",
+        "status": "active",
+        "milestones": [
+          { "id": "d1", "title": "One", "weight": 1, "status": "complete", "verifiedAt": "2026-06-14T12:00:00Z", "evidence": [{ "label": "D1", "url": "https://example.com/d1" }] },
+          { "id": "d2", "title": "Two", "weight": 1, "status": "complete", "verifiedAt": "2026-06-14T12:00:00Z", "evidence": [{ "label": "D2", "url": "https://example.com/d2" }] },
+          { "id": "d3", "title": "Three", "weight": 1, "status": "not_started" }
+        ]
+      },
+      {
+        "id": "empty",
+        "name": "Fixture: no milestones",
+        "status": "planned"
+      },
+      {
+        "id": "stale",
+        "name": "Fixture: stale verification",
+        "status": "active",
+        "milestones": [
+          { "id": "f1", "title": "Verified 45 days ago", "weight": 50, "status": "complete", "verifiedAt": "2026-05-01T12:00:00Z", "evidence": [{ "label": "F1", "url": "https://example.com/f1" }] },
+          { "id": "f2", "title": "Not started", "weight": 50, "status": "not_started" }
+        ]
+      },
+      {
+        "id": "aging",
+        "name": "Fixture: aging verification",
+        "status": "active",
+        "milestones": [
+          { "id": "g1", "title": "Verified 21 days ago", "weight": 40, "status": "complete", "verifiedAt": "2026-05-25T12:00:00Z", "evidence": [{ "label": "G1", "url": "https://example.com/g1" }] },
+          { "id": "g2", "title": "In progress", "weight": 60, "status": "in_progress" }
+        ]
+      },
+      {
+        "id": "nothing-claimed",
+        "name": "Fixture: nothing claimed",
+        "status": "planned",
+        "milestones": [
+          { "id": "h1", "title": "Everything", "weight": 100, "status": "not_started" }
+        ]
+      },
+      {
+        "id": "overdue",
+        "name": "Fixture: overdue milestone",
+        "status": "active",
+        "milestones": [
+          { "id": "i1", "title": "Late and open", "weight": 50, "status": "in_progress", "dueDate": "2026-06-01" },
+          { "id": "i2", "title": "Late but counted", "weight": 50, "status": "complete", "dueDate": "2026-06-01", "verifiedAt": "2026-06-14T12:00:00Z", "evidence": [{ "label": "I2", "url": "https://example.com/i2" }] }
+        ]
+      },
+      {
+        "id": "boundaries",
+        "name": "Fixture: freshness boundaries",
+        "status": "active",
+        "milestones": [
+          { "id": "j1", "title": "Exactly 14 days", "weight": 50, "status": "complete", "verifiedAt": "2026-06-01T12:00:00Z", "evidence": [{ "label": "J1", "url": "https://example.com/j1" }] },
+          { "id": "j2", "title": "Exactly 30 days", "weight": 50, "status": "complete", "verifiedAt": "2026-05-16T12:00:00Z", "evidence": [{ "label": "J2", "url": "https://example.com/j2" }] }
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "all-counted": {
+      "numeratorText": "100", "denominatorText": "100", "percent": 100,
+      "counted": ["a1", "a2"],
+      "reasons": { "a1": "counted", "a2": "counted" },
+      "confidence": "high",
+      "confidenceReasons": ["All counted milestones verified recently with evidence"],
+      "lastVerifiedAt": "2026-06-12T09:30:00.000Z"
+    },
+    "exclusions": {
+      "numeratorText": "10", "denominatorText": "100", "percent": 10,
+      "counted": ["b1"],
+      "reasons": { "b1": "counted", "b2": "blocked", "b3": "untested", "b4": "unverified", "b5": "no_evidence", "b6": "open_blocker" },
+      "confidence": "low",
+      "confidenceReasons": [
+        "3 milestones marked complete but not counted",
+        "1 milestone awaiting testing",
+        "1 blocked milestone",
+        "1 open blocker"
+      ],
+      "lastVerifiedAt": "2026-06-14T12:00:00.000Z"
+    },
+    "decimals": {
+      "numeratorText": "0.3", "denominatorText": "1", "percent": 30,
+      "counted": ["c1", "c2"],
+      "reasons": { "c1": "counted", "c2": "counted", "c3": "not_complete" },
+      "confidence": "high",
+      "confidenceReasons": ["All counted milestones verified recently with evidence"],
+      "lastVerifiedAt": "2026-06-13T12:00:00.000Z"
+    },
+    "round-down": {
+      "numeratorText": "2", "denominatorText": "3", "percent": 66,
+      "counted": ["d1", "d2"],
+      "reasons": { "d1": "counted", "d2": "counted", "d3": "not_complete" },
+      "confidence": "high",
+      "confidenceReasons": ["All counted milestones verified recently with evidence"],
+      "lastVerifiedAt": "2026-06-14T12:00:00.000Z"
+    },
+    "empty": {
+      "numeratorText": "0", "denominatorText": "0", "percent": null,
+      "counted": [],
+      "reasons": {},
+      "confidence": "none",
+      "confidenceReasons": ["No weighted milestones yet"],
+      "lastVerifiedAt": null
+    },
+    "stale": {
+      "numeratorText": "50", "denominatorText": "100", "percent": 50,
+      "counted": ["f1"],
+      "reasons": { "f1": "counted", "f2": "not_complete" },
+      "confidence": "low",
+      "confidenceReasons": ["1 counted milestone last verified over 30 days ago"],
+      "lastVerifiedAt": "2026-05-01T12:00:00.000Z"
+    },
+    "aging": {
+      "numeratorText": "40", "denominatorText": "100", "percent": 40,
+      "counted": ["g1"],
+      "reasons": { "g1": "counted", "g2": "not_complete" },
+      "confidence": "medium",
+      "confidenceReasons": ["1 counted milestone last verified 15-30 days ago"],
+      "lastVerifiedAt": "2026-05-25T12:00:00.000Z"
+    },
+    "nothing-claimed": {
+      "numeratorText": "0", "denominatorText": "100", "percent": 0,
+      "counted": [],
+      "reasons": { "h1": "not_complete" },
+      "confidence": "high",
+      "confidenceReasons": ["No milestone claims completion yet"],
+      "lastVerifiedAt": null
+    },
+    "overdue": {
+      "numeratorText": "50", "denominatorText": "100", "percent": 50,
+      "counted": ["i2"],
+      "reasons": { "i1": "not_complete", "i2": "counted" },
+      "confidence": "medium",
+      "confidenceReasons": ["1 overdue milestone"],
+      "lastVerifiedAt": "2026-06-14T12:00:00.000Z"
+    },
+    "boundaries": {
+      "numeratorText": "100", "denominatorText": "100", "percent": 100,
+      "counted": ["j1", "j2"],
+      "reasons": { "j1": "counted", "j2": "counted" },
+      "confidence": "medium",
+      "confidenceReasons": ["1 counted milestone last verified 15-30 days ago"],
+      "lastVerifiedAt": "2026-06-01T12:00:00.000Z"
+    }
+  }
+}

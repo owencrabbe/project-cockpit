@@ -1,0 +1,624 @@
+{
+  "schema": "project-cockpit",
+  "version": 1,
+  "exportedAt": "2026-10-01T12:00:00.000Z",
+  "projects": [
+    {
+      "id": "garden-signup",
+      "name": "Garden plot signup site",
+      "summary": "Online waitlist and plot signup for a neighborhood garden (fictional example).",
+      "owner": "You",
+      "status": "active",
+      "priority": "high",
+      "tags": [
+        "web",
+        "volunteers"
+      ],
+      "startDate": "2026-08-22",
+      "dueDate": "2026-10-22",
+      "updatedAt": "2026-09-30T10:00:00.000Z",
+      "milestones": [
+        {
+          "id": "m-requirements",
+          "title": "Requirements agreed with coordinators",
+          "weight": 10,
+          "status": "complete",
+          "dueDate": "2026-09-01",
+          "verifiedAt": "2026-09-28T10:00:00.000Z",
+          "evidence": [
+            {
+              "label": "Requirements notes",
+              "url": "https://example.com/garden/requirements"
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "m-form",
+          "title": "Signup form live on staging",
+          "weight": 25,
+          "status": "complete",
+          "dueDate": "2026-09-24",
+          "verifiedAt": "2026-09-26T10:00:00.000Z",
+          "evidence": [
+            {
+              "label": "Staging form",
+              "url": "https://staging.example.com/garden/signup"
+            },
+            {
+              "label": "Form test checklist",
+              "url": "https://example.com/garden/tests/signup-form"
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "m-waitlist",
+          "title": "Waitlist ordering logic",
+          "weight": 20,
+          "status": "untested",
+          "dueDate": "2026-10-05",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": "Built. Needs a test pass with 30 sample signups before it can count."
+        },
+        {
+          "id": "m-a11y",
+          "title": "Accessibility review",
+          "weight": 15,
+          "status": "in_progress",
+          "dueDate": "2026-10-11",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        },
+        {
+          "id": "m-plots",
+          "title": "Plot map imported",
+          "weight": 20,
+          "status": "blocked",
+          "dueDate": "2026-10-13",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        },
+        {
+          "id": "m-launch",
+          "title": "Launch announcement sent",
+          "weight": 10,
+          "status": "not_started",
+          "dueDate": "2026-10-22",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        }
+      ],
+      "blockers": [
+        {
+          "id": "b-plotmap",
+          "description": "Waiting on the final plot map from the garden coordinator.",
+          "owner": "Coordinator",
+          "since": "2026-09-25",
+          "milestoneId": "m-plots",
+          "resolved": false
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "a-testdata",
+          "text": "Create 30 sample signups and run the waitlist test",
+          "owner": "You",
+          "dueDate": "2026-10-03",
+          "done": false
+        },
+        {
+          "id": "a-contrast",
+          "text": "Fix the low-contrast button flagged in review",
+          "owner": "Design",
+          "dueDate": "2026-10-07",
+          "done": false
+        },
+        {
+          "id": "a-copy",
+          "text": "Draft launch announcement copy",
+          "owner": "You",
+          "dueDate": null,
+          "done": true
+        }
+      ],
+      "decisions": [
+        {
+          "id": "d-notify",
+          "question": "Notify waitlisted gardeners by email only, or email plus text message?",
+          "context": "Text messages would need a paid gateway. Email is free.",
+          "options": [
+            "Email only",
+            "Email plus text message"
+          ],
+          "status": "open",
+          "decision": "",
+          "neededBy": "2026-10-04",
+          "decidedAt": null
+        }
+      ]
+    },
+    {
+      "id": "field-notes",
+      "name": "Field notes mobile app",
+      "summary": "Offline-first note taking for survey volunteers (fictional example).",
+      "owner": "Mobile team",
+      "status": "active",
+      "priority": "medium",
+      "tags": [
+        "mobile",
+        "offline"
+      ],
+      "startDate": "2026-08-02",
+      "dueDate": "2026-11-15",
+      "updatedAt": "2026-09-29T10:00:00.000Z",
+      "milestones": [
+        {
+          "id": "m-sync",
+          "title": "Offline storage and sync design",
+          "weight": 15,
+          "status": "complete",
+          "dueDate": "2026-08-27",
+          "verifiedAt": "2026-09-11T10:00:00.000Z",
+          "evidence": [
+            {
+              "label": "Design notes",
+              "url": "https://example.org/field-notes/sync-design"
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "m-capture",
+          "title": "Photo capture screen",
+          "weight": 20,
+          "status": "complete",
+          "dueDate": "2026-09-21",
+          "verifiedAt": null,
+          "evidence": [
+            {
+              "label": "Build preview",
+              "url": "https://example.org/field-notes/builds/capture"
+            }
+          ],
+          "notes": "Marked complete by the team but nobody has verified it yet."
+        },
+        {
+          "id": "m-export",
+          "title": "CSV export",
+          "weight": 15,
+          "status": "complete",
+          "dueDate": "2026-09-26",
+          "verifiedAt": "2026-09-29T10:00:00.000Z",
+          "evidence": [],
+          "notes": "Verified on one device; evidence link still missing."
+        },
+        {
+          "id": "m-beta",
+          "title": "Closed beta with 5 volunteers",
+          "weight": 30,
+          "status": "not_started",
+          "dueDate": "2026-10-31",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        },
+        {
+          "id": "m-store",
+          "title": "App store listing prepared",
+          "weight": 20,
+          "status": "in_progress",
+          "dueDate": "2026-09-29",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        }
+      ],
+      "blockers": [
+        {
+          "id": "b-devices",
+          "description": "Test devices had not arrived.",
+          "owner": "Mobile team",
+          "since": "2026-09-06",
+          "milestoneId": null,
+          "resolved": true
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "a-verify-capture",
+          "text": "Verify photo capture on two older phones",
+          "owner": "You",
+          "dueDate": "2026-10-02",
+          "done": false
+        },
+        {
+          "id": "a-csv-evidence",
+          "text": "Attach a sample CSV as evidence for the export milestone",
+          "owner": "Mobile team",
+          "dueDate": "2026-10-02",
+          "done": false
+        }
+      ],
+      "decisions": [
+        {
+          "id": "d-platform",
+          "question": "Ship Android first, or both platforms together?",
+          "context": "",
+          "options": [
+            "Android first",
+            "Both together"
+          ],
+          "status": "decided",
+          "decision": "Android first: most volunteers use Android phones.",
+          "neededBy": "2026-09-19",
+          "decidedAt": "2026-09-22T10:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "label-printer",
+      "name": "Warehouse label printer migration",
+      "summary": "Move shipping-label printing to new thermal printers (fictional example).",
+      "owner": "Ops",
+      "status": "blocked",
+      "priority": "high",
+      "tags": [
+        "operations",
+        "hardware"
+      ],
+      "startDate": "2026-08-12",
+      "dueDate": "2026-10-15",
+      "updatedAt": "2026-09-27T10:00:00.000Z",
+      "milestones": [
+        {
+          "id": "m-inventory",
+          "title": "Printer inventory and locations",
+          "weight": 10,
+          "status": "complete",
+          "dueDate": "2026-08-17",
+          "verifiedAt": "2026-08-22T10:00:00.000Z",
+          "evidence": [
+            {
+              "label": "Inventory sheet",
+              "url": "https://example.com/ops/printer-inventory"
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "m-driver",
+          "title": "Driver installed on packing stations",
+          "weight": 40,
+          "status": "blocked",
+          "dueDate": "2026-10-04",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        },
+        {
+          "id": "m-templates",
+          "title": "Label templates converted",
+          "weight": 30,
+          "status": "untested",
+          "dueDate": "2026-10-09",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        },
+        {
+          "id": "m-cutover",
+          "title": "Cutover and old printers retired",
+          "weight": 20,
+          "status": "not_started",
+          "dueDate": "2026-10-15",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        }
+      ],
+      "blockers": [
+        {
+          "id": "b-driver",
+          "description": "Printer driver for the new station operating system is not available yet.",
+          "owner": "Ops",
+          "since": "2026-09-19",
+          "milestoneId": "m-driver",
+          "resolved": false
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "a-vendor",
+          "text": "Ask vendor support for a driver release date",
+          "owner": "Ops",
+          "dueDate": "2026-09-30",
+          "done": false
+        },
+        {
+          "id": "a-recheck",
+          "text": "Re-check printer inventory (last check is over a month old)",
+          "owner": "Ops",
+          "dueDate": "2026-10-06",
+          "done": false
+        }
+      ],
+      "decisions": [
+        {
+          "id": "d-fallback",
+          "question": "Rent temporary printers if the driver slips past next week?",
+          "context": "Renting keeps shipping on schedule but adds a short-term cost.",
+          "options": [
+            "Rent temporary printers",
+            "Wait for the driver"
+          ],
+          "status": "open",
+          "decision": "",
+          "neededBy": "2026-10-08",
+          "decidedAt": null
+        }
+      ]
+    },
+    {
+      "id": "newsletter",
+      "name": "Quarterly volunteer newsletter",
+      "summary": "Plan, write and send the autumn newsletter (fictional example).",
+      "owner": "Comms",
+      "status": "done",
+      "priority": "low",
+      "tags": [
+        "comms",
+        "volunteers"
+      ],
+      "startDate": "2026-09-01",
+      "dueDate": "2026-09-26",
+      "updatedAt": "2026-09-26T10:00:00.000Z",
+      "milestones": [
+        {
+          "id": "m-outline",
+          "title": "Outline approved",
+          "weight": 20,
+          "status": "complete",
+          "dueDate": "2026-09-11",
+          "verifiedAt": "2026-09-19T10:00:00.000Z",
+          "evidence": [
+            {
+              "label": "Approved outline",
+              "url": "https://example.com/newsletter/outline"
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "m-draft",
+          "title": "Draft written and edited",
+          "weight": 50,
+          "status": "complete",
+          "dueDate": "2026-09-21",
+          "verifiedAt": "2026-09-23T10:00:00.000Z",
+          "evidence": [
+            {
+              "label": "Final draft",
+              "url": "https://example.com/newsletter/draft-final"
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "m-send",
+          "title": "Sent to mailing list",
+          "weight": 30,
+          "status": "complete",
+          "dueDate": "2026-09-26",
+          "verifiedAt": "2026-09-26T10:00:00.000Z",
+          "evidence": [
+            {
+              "label": "Sent copy",
+              "url": "https://example.com/newsletter/sent"
+            }
+          ],
+          "notes": ""
+        }
+      ],
+      "blockers": [],
+      "nextActions": [],
+      "decisions": []
+    },
+    {
+      "id": "bike-workshop",
+      "name": "Bike repair workshop booking",
+      "summary": "Simple booking page for monthly repair workshops (fictional example).",
+      "owner": "You",
+      "status": "planned",
+      "priority": "medium",
+      "tags": [
+        "web",
+        "events"
+      ],
+      "startDate": "2026-10-15",
+      "dueDate": "2026-12-15",
+      "updatedAt": "2026-09-25T10:00:00.000Z",
+      "milestones": [],
+      "blockers": [],
+      "nextActions": [
+        {
+          "id": "a-scope",
+          "text": "Write a one-paragraph scope for the booking page",
+          "owner": "You",
+          "dueDate": "2026-10-17",
+          "done": false
+        }
+      ],
+      "decisions": [
+        {
+          "id": "d-tool",
+          "question": "Use a shared spreadsheet or a booking form for sign-ups?",
+          "context": "Revisit after the garden launch.",
+          "options": [
+            "Shared spreadsheet",
+            "Booking form"
+          ],
+          "status": "deferred",
+          "decision": "",
+          "neededBy": null,
+          "decidedAt": null
+        }
+      ]
+    }
+  ],
+  "agentSlots": [
+    {
+      "id": "studio",
+      "name": "Studio",
+      "sessionUrl": "https://agents.example.com/sessions/studio-demo",
+      "provider": "claude",
+      "model": "placeholder-model-a",
+      "branch": "feature/garden-waitlist-screen",
+      "status": "running",
+      "statusNote": "Building the waitlist screen",
+      "verifiedAt": "2026-10-01T10:00:00.000Z",
+      "milestones": [
+        {
+          "id": "s-form",
+          "title": "Signup form matches the design",
+          "weight": 40,
+          "status": "complete",
+          "dueDate": null,
+          "verifiedAt": "2026-10-01T09:00:00.000Z",
+          "evidence": [
+            {
+              "label": "Preview build",
+              "url": "https://staging.example.com/garden/preview"
+            }
+          ],
+          "notes": ""
+        },
+        {
+          "id": "s-waitlist",
+          "title": "Waitlist screen",
+          "weight": 60,
+          "status": "in_progress",
+          "dueDate": "2026-10-05",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        }
+      ],
+      "handoff": "Goal: finish the garden waitlist screen (fictional example).\nDone: signup form and validation messages.\nNext: waitlist ordering view. Ask before changing the data model.",
+      "handoffUpdatedAt": "2026-10-01T09:00:00.000Z",
+      "updatedAt": "2026-10-01T10:00:00.000Z"
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "sessionUrl": "https://agents.example.org/runs/security-review-demo",
+      "provider": "codex",
+      "model": "placeholder-model-b",
+      "branch": "chore/dependency-review",
+      "status": "waiting",
+      "statusNote": "Waiting for you to review the dependency report",
+      "verifiedAt": "2026-09-30T06:00:00.000Z",
+      "milestones": [
+        {
+          "id": "sec-report",
+          "title": "Dependency report produced",
+          "weight": 50,
+          "status": "untested",
+          "dueDate": null,
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        },
+        {
+          "id": "sec-fixes",
+          "title": "High-severity findings fixed",
+          "weight": 50,
+          "status": "not_started",
+          "dueDate": "2026-10-07",
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        }
+      ],
+      "handoff": "Review the fictional dependency report before approving any upgrades.",
+      "handoffUpdatedAt": "2026-09-30T06:00:00.000Z",
+      "updatedAt": "2026-09-30T06:00:00.000Z"
+    },
+    {
+      "id": "research",
+      "name": "Research",
+      "sessionUrl": null,
+      "provider": null,
+      "model": "",
+      "branch": "",
+      "status": "queued",
+      "statusNote": "Start after the garden launch",
+      "verifiedAt": null,
+      "milestones": [
+        {
+          "id": "r-brief",
+          "title": "Research brief written",
+          "weight": 100,
+          "status": "not_started",
+          "dueDate": null,
+          "verifiedAt": null,
+          "evidence": [],
+          "notes": ""
+        }
+      ],
+      "handoff": "Question: email only, or email plus text reminders for waitlists (fictional example)? Compare costs and opt-in rules.",
+      "handoffUpdatedAt": "2026-09-29T10:00:00.000Z",
+      "updatedAt": "2026-09-29T10:00:00.000Z"
+    },
+    {
+      "id": "hackathon",
+      "name": "Hackathon",
+      "sessionUrl": null,
+      "provider": null,
+      "model": "",
+      "branch": "",
+      "status": "offline",
+      "statusNote": "",
+      "verifiedAt": null,
+      "milestones": [],
+      "handoff": "",
+      "handoffUpdatedAt": null,
+      "updatedAt": null
+    },
+    {
+      "id": "qa",
+      "name": "QA",
+      "sessionUrl": "https://agents.example.com/sessions/qa-demo",
+      "provider": "other",
+      "model": "",
+      "branch": "test/label-templates",
+      "status": "offline",
+      "statusNote": "Session ended; results recorded below",
+      "verifiedAt": "2026-09-29T10:00:00.000Z",
+      "milestones": [
+        {
+          "id": "qa-templates",
+          "title": "Label templates print correctly on the test printer",
+          "weight": 100,
+          "status": "complete",
+          "dueDate": null,
+          "verifiedAt": "2026-09-29T10:00:00.000Z",
+          "evidence": [
+            {
+              "label": "Test log",
+              "url": "https://example.com/ops/label-test-log"
+            }
+          ],
+          "notes": ""
+        }
+      ],
+      "handoff": "",
+      "handoffUpdatedAt": null,
+      "updatedAt": "2026-09-29T10:00:00.000Z"
+    }
+  ]
+}
