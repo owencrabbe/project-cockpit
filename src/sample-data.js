@@ -20,6 +20,7 @@
     const now = nowInput instanceof Date ? nowInput : new Date(nowInput || Date.now());
     const day = (offset) => Core.localDateString(new Date(now.getTime() + offset * DAY_MS));
     const ago = (days) => new Date(now.getTime() - days * DAY_MS - 2 * 60 * 60 * 1000).toISOString();
+    const hoursAgo = (hours) => new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
 
     return {
       schema: Core.SCHEMA_ID,
@@ -257,6 +258,115 @@
               status: 'deferred', decision: '', neededBy: null, decidedAt: null,
             },
           ],
+        },
+      ],
+      // Fictional session records. Links use reserved example domains and
+      // model names are placeholders; no real session is referenced.
+      agentSlots: [
+        {
+          id: 'studio',
+          name: 'Studio',
+          sessionUrl: 'https://agents.example.com/sessions/studio-demo',
+          provider: 'claude',
+          model: 'placeholder-model-a',
+          branch: 'feature/garden-waitlist-screen',
+          status: 'running',
+          statusNote: 'Building the waitlist screen',
+          verifiedAt: hoursAgo(2),
+          milestones: [
+            {
+              id: 's-form', title: 'Signup form matches the design', weight: 40, status: 'complete',
+              dueDate: null, verifiedAt: hoursAgo(3),
+              evidence: [{ label: 'Preview build', url: 'https://staging.example.com/garden/preview' }], notes: '',
+            },
+            {
+              id: 's-waitlist', title: 'Waitlist screen', weight: 60, status: 'in_progress',
+              dueDate: day(4), verifiedAt: null, evidence: [], notes: '',
+            },
+          ],
+          handoff: 'Goal: finish the garden waitlist screen (fictional example).\nDone: signup form and validation messages.\nNext: waitlist ordering view. Ask before changing the data model.',
+          handoffUpdatedAt: hoursAgo(3),
+          updatedAt: hoursAgo(2),
+        },
+        {
+          id: 'security',
+          name: 'Security',
+          sessionUrl: 'https://agents.example.org/runs/security-review-demo',
+          provider: 'codex',
+          model: 'placeholder-model-b',
+          branch: 'chore/dependency-review',
+          status: 'waiting',
+          statusNote: 'Waiting for you to review the dependency report',
+          verifiedAt: hoursAgo(30),
+          milestones: [
+            {
+              id: 'sec-report', title: 'Dependency report produced', weight: 50, status: 'untested',
+              dueDate: null, verifiedAt: null, evidence: [], notes: '',
+            },
+            {
+              id: 'sec-fixes', title: 'High-severity findings fixed', weight: 50, status: 'not_started',
+              dueDate: day(6), verifiedAt: null, evidence: [], notes: '',
+            },
+          ],
+          handoff: 'Review the fictional dependency report before approving any upgrades.',
+          handoffUpdatedAt: hoursAgo(30),
+          updatedAt: hoursAgo(30),
+        },
+        {
+          id: 'research',
+          name: 'Research',
+          sessionUrl: null,
+          provider: null,
+          model: '',
+          branch: '',
+          status: 'queued',
+          statusNote: 'Start after the garden launch',
+          verifiedAt: null,
+          milestones: [
+            {
+              id: 'r-brief', title: 'Research brief written', weight: 100, status: 'not_started',
+              dueDate: null, verifiedAt: null, evidence: [], notes: '',
+            },
+          ],
+          handoff: 'Question: email only, or email plus text reminders for waitlists (fictional example)? Compare costs and opt-in rules.',
+          handoffUpdatedAt: ago(2),
+          updatedAt: ago(2),
+        },
+        {
+          id: 'hackathon',
+          name: 'Hackathon',
+          sessionUrl: null,
+          provider: null,
+          model: '',
+          branch: '',
+          status: 'offline',
+          statusNote: '',
+          verifiedAt: null,
+          milestones: [],
+          handoff: '',
+          handoffUpdatedAt: null,
+          updatedAt: null,
+        },
+        {
+          id: 'qa',
+          name: 'QA',
+          sessionUrl: 'https://agents.example.com/sessions/qa-demo',
+          provider: 'other',
+          model: '',
+          branch: 'test/label-templates',
+          status: 'offline',
+          statusNote: 'Session ended; results recorded below',
+          verifiedAt: hoursAgo(50),
+          milestones: [
+            {
+              id: 'qa-templates', title: 'Label templates print correctly on the test printer', weight: 100, status: 'complete',
+              dueDate: null, verifiedAt: hoursAgo(50),
+              evidence: [{ label: 'Test log', url: 'https://example.com/ops/label-test-log' }], notes: '',
+            },
+          ],
+          handoff: '',
+          handoffUpdatedAt: null,
+          updatedAt: hoursAgo(50),
         },
       ],
     };

@@ -414,7 +414,8 @@ input[type="radio"] {
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  padding: 0 8px;
+  padding: 0 4px;
+  font-size: 0.95rem;
   color: var(--muted);
   font-weight: 600;
   text-decoration: none;
@@ -526,6 +527,12 @@ main:focus {
   font-weight: 600;
   line-height: 1.5;
   max-width: 100%;
+  /* Wrap long badges at spaces only, never inside a word. */
+  overflow-wrap: normal;
+}
+
+.item-head > .badge {
+  flex-shrink: 0;
 }
 
 .tone-ok { background: var(--ok-bg); color: var(--ok-fg); }
@@ -877,6 +884,35 @@ main:focus {
   margin-top: 8px;
 }
 
+/* ---------- agent slots ---------- */
+
+.connection {
+  font-weight: 600;
+}
+
+.connection.unbound {
+  background: var(--neutral-bg);
+  color: var(--neutral-fg);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.handoff {
+  white-space: pre-wrap;
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 1px 4px;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- timeline ---------- */
 
 .timeline {
@@ -1038,6 +1074,12 @@ dialog::backdrop {
 
   .detail-grid {
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 359px) {
+  .tabs a {
+    font-size: 0.875rem;
   }
 }
 

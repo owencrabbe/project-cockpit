@@ -11,6 +11,7 @@ Everything in this repository (sample projects, people, teams and links) is fict
 - **Evidence-based progress:** completion shown as `numerator / denominator` of milestone weight, a percentage, a confidence rating with its reasons, and the last verification time.
 - **Timeline:** every open dated item across projects (milestones, next actions, decisions, project due dates), grouped into Overdue, Next 7 days, 8 to 30 days and Later.
 - **Decisions:** questions waiting on you across all projects. Recording a decision keeps the choice, rationale and timestamp.
+- **Agent slots:** five reusable named slots (Studio, Security, Research, Hackathon, QA) for keeping records of Claude, Codex or other agent sessions you run elsewhere: session link, provider and model, branch, slot milestones, a saved context handoff, the recorded status (running, queued, waiting or offline) and when you last checked it. These are records you maintain by hand. See [Agent slots](#agent-slots).
 - **JSON import and export** with strict validation, and durable local storage behind a small, documented storage adapter interface.
 
 ## How completion is calculated
@@ -40,6 +41,19 @@ In the editor, changing a milestone's status to Complete clears any older verifi
 | Not measurable | No weighted milestones. |
 
 Cards show the level; the project page lists the specific reasons, so a rating is never a black box. The rules live in `computeProgress` and `computeConfidence` in [`src/core.js`](src/core.js).
+
+## Agent slots
+
+The **Agents** tab holds five fixed, reusable slots: Studio, Security, Research, Hackathon and QA. Each slot is a record you keep about a session that runs somewhere else. Project Cockpit never connects to, starts, polls or monitors a session, and shows no telemetry. Every link, status and check in a slot was typed in by a person, and the page says so.
+
+- **No link, no claims.** A slot without a session link reads "No session connected" and can only be Queued or Offline. A slot with a link reads "Session link recorded manually (not monitored)". The app never describes a slot as connected.
+- **Session links** must be absolute `https://` URLs with no username or password and no token-like query or fragment parameters (`token`, `access_token`, `api_key`, `key`, `sig`, `signature`, `code`, `password` and similar), because exports are often shared. They open in a new tab with no referrer. Nothing is fetched from them.
+- **Recorded status and last check.** Changing the status or the link clears the last-checked time unless you tick "Record a status check now" in the same save. "Record status check" confirms the current status without changing it. A Running or Waiting status last checked more than 24 hours ago is flagged as possibly out of date; one never checked says so.
+- **Slot milestones** use exactly the project rule: only Complete, verified milestones with an http(s) evidence link count, and Blocked or Untested never do.
+- **Context handoff** is free text (up to 10,000 characters) for the next session: goal, what is done, what is next. It can be copied with one button. It is stored in the browser and included in exports, so never paste secrets into it.
+- **Reset slot** clears a slot so it can be reused for different work.
+
+Slots are saved in the same document as projects (an optional `agentSlots` list), so import, export, storage adapters and validation cover them. Files written before slots existed still import and get five empty slots. An older copy of the app (v1.0.0) imports newer files but drops the slots with an "unknown field" warning.
 
 ## Run it
 
@@ -97,13 +111,15 @@ A GitHub Actions workflow that runs both suites is included as [`docs/ci/test.ym
 | `tests/unit/import-validation.test.js` | Size limits, malformed JSON, schema and version, weights, statuses, dates and timestamps, duplicates, references, limits, unknown fields, round-trip export and import. |
 | `tests/unit/security.test.js` | URL allow-list, unsafe evidence on import, prototype pollution, forbidden DOM sinks, CSP and inline-script checks, fictional-only sample links. |
 | `tests/unit/storage.test.js` | Adapters: round-trip, key isolation, quota errors, blocked storage fallback, cross-tab events. |
+| `tests/unit/agent-slots.test.js` | Default and ordered slots, unknown or duplicate slots, https-only session links without credentials or tokens, queued/offline-only when unbound, provider, model, branch and handoff rules, slot milestone eligibility, staleness wording, round-trip through export and storage, fictional sample slots. |
 | `tests/e2e/mobile-a11y.spec.js` | axe-core WCAG 2.2 AA and best-practice scans of every view and dialog in light and dark mode, 320 px reflow, touch target sizes, landmarks, keyboard and focus behavior, error announcements. |
 | `tests/e2e/progress-ui.spec.js` | The same fixture through the real UI with a frozen clock, verification and status-change rules, blocker resolution. |
+| `tests/e2e/agent-slots.spec.js` | Unbound slots say "No session connected", slot form validation, honest status checks with a frozen clock, slot milestones, handoff as inert text plus copy, reset, export and import including unsafe session links and pre-slot files. |
 | `tests/e2e/security.spec.js` | Script payloads render as inert text, unsafe and oversized imports rejected without changes, link attributes, persistence, cross-tab sync, corrupted-storage recovery, export, custom adapter, `file://` use. |
 
 ## What it deliberately does not do
 
-No accounts, server, database, analytics or third-party requests. No integrations with other tools, and no automated or agent-run actions: every status, verification and decision is something a person recorded. Progress is never inferred from anything other than the milestone records you enter.
+No accounts, server, database, analytics or third-party requests. No integrations with other tools, and no automated or agent-run actions: every status, verification and decision is something a person recorded. Agent slots are manual records too: the app does not connect to, start or monitor any session, and does not invent activity. Progress is never inferred from anything other than the milestone records you enter.
 
 ## License
 

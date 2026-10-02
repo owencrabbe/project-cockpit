@@ -28,6 +28,12 @@ async function visitAllViews(page, check) {
   await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Decisions' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Decisions' })).toBeVisible();
   await check('decisions');
+  await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Agents' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Agent slots' })).toBeVisible();
+  await check('agent slots');
+  await page.getByRole('link', { name: 'Security', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Security slot' })).toBeVisible();
+  await check('agent slot detail');
 }
 
 for (const colorScheme of ['light', 'dark']) {
@@ -58,6 +64,14 @@ for (const colorScheme of ['light', 'dark']) {
       await chooseImport(page, '{"schema":"nope"}');
       await expect(page.getByRole('dialog', { name: 'Import failed: nothing was changed' })).toBeVisible();
       await expectNoAxeViolations(page, 'import error dialog');
+      await page.keyboard.press('Escape');
+      await page.goto('/#/agent/studio');
+      await page.getByRole('button', { name: 'Edit slot' }).click();
+      const slotDialog = page.getByRole('dialog', { name: 'Edit Studio slot' });
+      await slotDialog.getByLabel('Session link').fill('http://not-https.example.com');
+      await slotDialog.getByRole('button', { name: 'Save slot' }).click();
+      await expect(slotDialog.getByRole('alert')).toBeVisible();
+      await expectNoAxeViolations(page, 'slot dialog with errors');
       await app.assertClean();
     });
   });
@@ -120,6 +134,10 @@ test.describe('small screens', () => {
     expect(await measure(), 'detail view').toEqual([]);
     await page.getByRole('button', { name: 'Add milestone' }).click();
     expect(await measure(), 'dialog').toEqual([]);
+    await page.keyboard.press('Escape');
+    await page.goto('/#/agent/studio');
+    await expect(page.getByRole('heading', { level: 1, name: 'Studio slot' })).toBeVisible();
+    expect(await measure(), 'agent slot detail').toEqual([]);
     await app.assertClean();
   });
 });
@@ -132,7 +150,7 @@ test('structure: one main landmark, one h1 per view, labelled navigation with cu
     expect(await page.locator('h1').count(), label).toBe(1);
     await expect(page.getByRole('navigation', { name: 'Views' }).locator('[aria-current="page"]')).toHaveCount(1);
   });
-  await expect(page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Decisions' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: 'Agents' })).toHaveAttribute('aria-current', 'page');
   await app.assertClean();
 });
 

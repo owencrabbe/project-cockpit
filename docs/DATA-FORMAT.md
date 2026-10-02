@@ -17,6 +17,7 @@ Project Cockpit imports and exports one JSON document. Validation lives in `vali
 | `version` | number | Required. Must be `1`. |
 | `exportedAt` | timestamp | Optional. Written on export, ignored on import. |
 | `projects` | array | Required. Up to 200 projects. |
+| `agentSlots` | AgentSlot[] | Optional. Up to 5, one per slot id. Missing slots are filled with empty defaults, and slots are always returned in the order studio, security, research, hackathon, qa. |
 
 Unknown fields anywhere are reported as warnings and dropped; they never block an import.
 
@@ -95,6 +96,26 @@ A milestone counts toward completion only when it is `complete`, has `verifiedAt
 | `decision` | long text | Required when `status` is `decided`. |
 | `neededBy` | date | Optional. |
 | `decidedAt` | timestamp | Optional. Set by the app when a decision is recorded. |
+
+## Agent slot
+
+A record of an externally managed agent session. Project Cockpit never contacts the session; every field is entered by a person.
+
+| Field | Type | Rules |
+| --- | --- | --- |
+| `id` | enum | Required: `studio`, `security`, `research`, `hackathon`, `qa`. Unique. |
+| `name` | string | Optional and ignored: names are fixed by id (Studio, Security, Research, Hackathon, QA). |
+| `sessionUrl` | string or null | Optional. Absolute `https://` URL, no username or password, at most 2,048 characters, and no query or fragment parameter whose name looks like a secret (`token`, `access_token`, `api_key`, `apiKey`, `key`, `sig`, `signature`, `code`, `password`, `secret`, `auth`, `credential` and `*_`/`*-` variants). |
+| `provider` | enum or null | Optional: `claude`, `codex`, `other`. |
+| `model` | string | Optional. Up to 80 characters. |
+| `branch` | string | Optional. Letters, digits, `.`, `_`, `-` and `/`; no leading `-` or `/`, no `..` or `//`, no trailing `/`, `.` or `.lock`, no path part starting with `.`. Up to 200 characters. |
+| `status` | enum | Optional, default `offline`: `running`, `queued`, `waiting`, `offline`. Without a `sessionUrl` only `queued` or `offline` are allowed. |
+| `statusNote` | short text | Optional. |
+| `verifiedAt` | timestamp | Optional. When someone last checked the recorded status against the session. Not in the future. |
+| `milestones` | Milestone[] | Optional. Up to 50, same rules and same counting rule as project milestones. |
+| `handoff` | text | Optional. Up to 10,000 characters. Never put secrets here: it is exported with everything else. |
+| `handoffUpdatedAt` | timestamp | Optional. Set by the app when the handoff text changes. |
+| `updatedAt` | timestamp | Optional. Set by the app on every change. |
 
 ## Error reporting
 

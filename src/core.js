@@ -31,12 +31,32 @@
     urlLength: 2048,
     weightMax: 1000,
     errorsReported: 50,
+    slotMilestones: 50,
+    handoff: 10000,
+    model: 80,
+    branch: 200,
   });
 
   const PROJECT_STATUSES = Object.freeze(['planned', 'active', 'blocked', 'on_hold', 'done']);
   const MILESTONE_STATUSES = Object.freeze(['not_started', 'in_progress', 'blocked', 'untested', 'complete']);
   const PRIORITIES = Object.freeze(['high', 'medium', 'low']);
   const DECISION_STATUSES = Object.freeze(['open', 'decided', 'deferred']);
+
+  // Agent slots are user-maintained records of externally managed sessions.
+  // Nothing here connects to, starts or monitors a session.
+  const AGENT_SLOTS = Object.freeze([
+    Object.freeze({ id: 'studio', name: 'Studio' }),
+    Object.freeze({ id: 'security', name: 'Security' }),
+    Object.freeze({ id: 'research', name: 'Research' }),
+    Object.freeze({ id: 'hackathon', name: 'Hackathon' }),
+    Object.freeze({ id: 'qa', name: 'QA' }),
+  ]);
+  const AGENT_STATUSES = Object.freeze(['running', 'queued', 'waiting', 'offline']);
+  const UNBOUND_AGENT_STATUSES = Object.freeze(['queued', 'offline']);
+  const AGENT_PROVIDERS = Object.freeze(['claude', 'codex', 'other']);
+  // A recorded "running" or "waiting" status older than this is flagged as possibly out of date.
+  const STATUS_STALE_HOURS = 24;
+  const SECRET_PARAM = /^(?:.*[_-])?(?:token|secret|password|passwd|pwd|auth|authorization|apikey|api[_-]?key|key|sig|signature|code|credentials?)$/i;
 
   const LABELS = Object.freeze({
     planned: 'Planned',
@@ -54,6 +74,13 @@
     open: 'Open',
     decided: 'Decided',
     deferred: 'Deferred',
+    running: 'Running',
+    queued: 'Queued',
+    waiting: 'Waiting',
+    offline: 'Offline',
+    claude: 'Claude',
+    codex: 'Codex',
+    other: 'Other',
   });
 
   // A counted milestone verified within FRESH_DAYS keeps confidence high;
@@ -81,7 +108,9 @@
   const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 
   const KEYS = Object.freeze({
-    document: ['schema', 'version', 'exportedAt', 'projects'],
+    document: ['schema', 'version', 'exportedAt', 'projects', 'agentSlots'],
+    agentSlot: ['id', 'name', 'sessionUrl', 'provider', 'model', 'branch', 'status', 'statusNote', 'verifiedAt',
+      'milestones', 'handoff', 'handoffUpdatedAt', 'updatedAt'],
     project: ['id', 'name', 'summary', 'owner', 'status', 'priority', 'tags', 'startDate', 'dueDate',
       'updatedAt', 'milestones', 'blockers', 'nextActions', 'decisions'],
     milestone: ['id', 'title', 'weight', 'status', 'dueDate', 'verifiedAt', 'evidence', 'notes'],
@@ -191,6 +220,58 @@
     return url.href;
   }
 
+  /**
+   * Checks a link to an externally managed agent session. Returns
+   * { url, problem }: url is the normalized https URL when acceptable.
+   * Links must be https, carry no username/password, and carry no
+   * token-like query or fragment parameters (exports are often shared).
+   */
+  function checkSessionUrl(value) {
+    const href = safeHttpUrl(value);
+    if (!href || new URL(href).protocol !== 'https:') {
+      return { url: null, problem: 'must be an absolute https:// URL without a username or password' };
+    }
+    const url = new URL(href);
+    const names = Array.from(url.searchParams.keys());
+    const fragment = url.hash.slice(1);
+    if (fragment.includes('=')) names.push(...new URLSearchParams(fragment).keys());
+    if (names.some((name) => SECRET_PARAM.test(name))) {
+      return { url: null, problem: 'must not include tokens, keys or other secrets in the query or fragment' };
+    }
+    return { url: href, problem: null };
+  }
+
+  /** Conservative subset of git's branch-name rules. */
+  function isValidBranchName(name) {
+    if (typeof name !== 'string' || !name || name.length > LIMITS.branch) return false;
+    if (!/^[A-Za-z0-9._/-]+$/.test(name)) return false;
+    if (name.startsWith('-') || name.startsWith('/') || name.endsWith('/') || name.endsWith('.')) return false;
+    if (name.endsWith('.lock') || name.includes('..') || name.includes('//')) return false;
+    return !name.split('/').some((part) => part.startsWith('.'));
+  }
+
+  function defaultAgentSlot(def) {
+    return {
+      id: def.id,
+      name: def.name,
+      sessionUrl: null,
+      provider: null,
+      model: '',
+      branch: '',
+      status: 'offline',
+      statusNote: '',
+      verifiedAt: null,
+      milestones: [],
+      handoff: '',
+      handoffUpdatedAt: null,
+      updatedAt: null,
+    };
+  }
+
+  function defaultAgentSlots() {
+    return AGENT_SLOTS.map(defaultAgentSlot);
+  }
+
   function newId(prefix) {
     const bytes = new Uint8Array(8);
     const cryptoObj = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined;
@@ -204,7 +285,7 @@
   }
 
   function createEmptyDocument() {
-    return { schema: SCHEMA_ID, version: SCHEMA_VERSION, projects: [] };
+    return { schema: SCHEMA_ID, version: SCHEMA_VERSION, projects: [], agentSlots: defaultAgentSlots() };
   }
 
   /* ---------- validation ---------- */
@@ -477,6 +558,50 @@
     return decision;
   }
 
+  function readAgentSlot(ctx, raw, path) {
+    const obj = readObject(ctx, raw, path, KEYS.agentSlot);
+    if (!obj) return undefined;
+    const id = own(obj, 'id');
+    const def = AGENT_SLOTS.find((d) => d.id === id);
+    if (!def) {
+      addError(ctx, `${path}.id`, `must be one of: ${AGENT_SLOTS.map((d) => d.id).join(', ')}`);
+      return undefined;
+    }
+    let sessionUrl = null;
+    const rawUrl = own(obj, 'sessionUrl');
+    if (rawUrl !== undefined && rawUrl !== null && rawUrl !== '') {
+      const check = checkSessionUrl(rawUrl);
+      if (check.problem) addError(ctx, `${path}.sessionUrl`, check.problem);
+      else sessionUrl = check.url;
+    }
+    const rawProvider = own(obj, 'provider');
+    const provider = rawProvider === undefined || rawProvider === null || rawProvider === ''
+      ? null : readEnum(ctx, obj, 'provider', path, AGENT_PROVIDERS, null);
+    const branch = readString(ctx, obj, 'branch', path, { max: LIMITS.branch });
+    if (branch && !isValidBranchName(branch)) addError(ctx, `${path}.branch`, 'is not a valid git branch name');
+    const status = readEnum(ctx, obj, 'status', path, AGENT_STATUSES, 'offline');
+    if (!sessionUrl && !rawUrl && !UNBOUND_AGENT_STATUSES.includes(status)) {
+      addError(ctx, `${path}.status`, 'must be "queued" or "offline" when no session link is recorded');
+    }
+    const slot = {
+      id: def.id,
+      name: def.name,
+      sessionUrl,
+      provider,
+      model: readString(ctx, obj, 'model', path, { max: LIMITS.model }),
+      branch: branch && isValidBranchName(branch) ? branch : '',
+      status,
+      statusNote: readString(ctx, obj, 'statusNote', path),
+      verifiedAt: readTimestamp(ctx, obj, 'verifiedAt', path, { notFuture: true }),
+      milestones: readArray(ctx, obj, 'milestones', path, LIMITS.slotMilestones, (item, p) => readMilestone(ctx, item, p)),
+      handoff: readString(ctx, obj, 'handoff', path, { max: LIMITS.handoff }),
+      handoffUpdatedAt: readTimestamp(ctx, obj, 'handoffUpdatedAt', path),
+      updatedAt: readTimestamp(ctx, obj, 'updatedAt', path),
+    };
+    checkUniqueIds(ctx, slot.milestones, `${path}.milestones`);
+    return slot;
+  }
+
   function readTags(ctx, obj, path) {
     const tags = readArray(ctx, obj, 'tags', path, LIMITS.tags, (item, p) => {
       if (typeof item !== 'string' || !item.trim()) {
@@ -566,7 +691,12 @@
     }
     const projects = readArray(ctx, input, 'projects', '$', LIMITS.projects, (item, p) => readProject(ctx, item, p));
     checkUniqueIds(ctx, projects, '$.projects');
-    return finish({ schema: SCHEMA_ID, version: SCHEMA_VERSION, projects });
+    // agentSlots is optional so files written before slots existed still import;
+    // missing slots get defaults and the result is always in the fixed order.
+    const slots = readArray(ctx, input, 'agentSlots', '$', AGENT_SLOTS.length, (item, p) => readAgentSlot(ctx, item, p));
+    checkUniqueIds(ctx, slots, '$.agentSlots');
+    const agentSlots = AGENT_SLOTS.map((def) => slots.find((slot) => slot.id === def.id) || defaultAgentSlot(def));
+    return finish({ schema: SCHEMA_ID, version: SCHEMA_VERSION, projects, agentSlots });
   }
 
   /** Size-checks, parses and validates JSON text (an import file or stored state). */
@@ -598,6 +728,7 @@
       version: SCHEMA_VERSION,
       exportedAt: toDate(nowInput).toISOString(),
       projects: doc.projects,
+      agentSlots: doc.agentSlots || defaultAgentSlots(),
     };
     return `${JSON.stringify(out, null, 2)}\n`;
   }
@@ -858,6 +989,31 @@
     return rows.sort(comparators[f.sort] || comparators.due);
   }
 
+  /**
+   * Honest presentation of a slot: whether a session link is recorded,
+   * whether the recorded status may be out of date, and milestone progress
+   * under the same eligibility rule as projects.
+   */
+  function agentSlotView(slot, nowInput) {
+    const now = toDate(nowInput);
+    const bound = Boolean(slot.sessionUrl);
+    const ageHours = slot.verifiedAt ? (now.getTime() - Date.parse(slot.verifiedAt)) / 3600000 : null;
+    let freshness = null;
+    if (bound && !slot.verifiedAt) {
+      freshness = 'Recorded status has never been checked against the session';
+    } else if ((slot.status === 'running' || slot.status === 'waiting') && ageHours > STATUS_STALE_HOURS) {
+      freshness = `Recorded status was last checked ${relativeTime(slot.verifiedAt, now)} and may be out of date`;
+    }
+    return {
+      bound,
+      connection: bound ? 'Session link recorded manually (not monitored)' : 'No session connected',
+      ageHours,
+      stale: Boolean(freshness),
+      freshness,
+      progress: computeProgress({ milestones: slot.milestones, blockers: [] }, now),
+    };
+  }
+
   /* ---------- display helpers ---------- */
 
   function relativeDays(days) {
@@ -891,6 +1047,11 @@
     MILESTONE_STATUSES,
     PRIORITIES,
     DECISION_STATUSES,
+    AGENT_SLOTS,
+    AGENT_STATUSES,
+    UNBOUND_AGENT_STATUSES,
+    AGENT_PROVIDERS,
+    STATUS_STALE_HOURS,
     ELIGIBILITY,
     FRESH_DAYS,
     STALE_DAYS,
@@ -900,6 +1061,10 @@
     isValidTimestamp,
     daysBetweenDates,
     safeHttpUrl,
+    checkSessionUrl,
+    isValidBranchName,
+    defaultAgentSlots,
+    agentSlotView,
     newId,
     createEmptyDocument,
     validateDocument,

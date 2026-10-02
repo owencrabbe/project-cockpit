@@ -270,6 +270,15 @@
     return doc.projects.find((p) => p.id === id) || null;
   }
 
+  function findSlot(doc, id) {
+    return (doc.agentSlots || []).find((s) => s.id === id) || null;
+  }
+
+  /** Milestones belong to a project or an agent slot: owner is { kind, id }. */
+  function findOwner(doc, owner) {
+    return owner.kind === 'slot' ? findSlot(doc, owner.id) : findProject(doc, owner.id);
+  }
+
   function touch(project) {
     project.updatedAt = now().toISOString();
   }
@@ -520,7 +529,7 @@
     return row;
   }
 
-  function milestoneForm(project, existing) {
+  function milestoneForm(owner, existing) {
     const m = existing || { status: 'not_started', evidence: [], weight: '' };
     const rows = h('div', { class: 'evidence-rows' }, m.evidence.map((e) => evidenceRow(e)));
     const evidenceSet = h('fieldset', { class: 'fieldset' },
@@ -580,8 +589,8 @@
         const status = str(fd, 'status');
         const verifyNow = checked(fd, 'verifyNow');
         return commit((doc) => {
-          const target = findProject(doc, project.id);
-          if (!target) return ['This project no longer exists.'];
+          const target = findOwner(doc, owner);
+          if (!target) return ['This project or slot no longer exists.'];
           let item = existing ? target.milestones.find((x) => x.id === existing.id) : null;
           if (existing && !item) return ['This milestone no longer exists.'];
           if (!item) {
@@ -770,7 +779,7 @@
     else if (o.after) o.after();
   }
 
-  async function verifyMilestone(project, milestone) {
+  async function verifyMilestone(owner, milestone) {
     const ok = await confirmDialog({
       title: 'Record verification?',
       body: [
@@ -781,7 +790,7 @@
     });
     if (!ok) return;
     commit((doc) => {
-      const target = findProject(doc, project.id);
+      const target = findOwner(doc, owner);
       const item = target && target.milestones.find((x) => x.id === milestone.id);
       if (!item) return ['This milestone no longer exists.'];
       item.verifiedAt = now().toISOString();
@@ -849,11 +858,12 @@
     }
     const projects = result.data.projects;
     const milestones = projects.reduce((n, p) => n + p.milestones.length, 0);
+    const linkedSlots = result.data.agentSlots.filter((slot) => slot.sessionUrl).length;
     const current = state.doc.projects.length;
     const ok = await confirmDialog({
       title: 'Replace current data?',
       body: [
-        h('p', {}, `The file contains ${plural(projects.length, 'project')} and ${plural(milestones, 'milestone')}.`),
+        h('p', {}, `The file contains ${plural(projects.length, 'project')}, ${plural(milestones, 'milestone')} and ${plural(linkedSlots, 'agent slot')} with a recorded session link.`),
         h('p', {}, state.recovery
           ? 'Importing replaces the unreadable saved data.'
           : `Importing replaces the ${plural(current, 'project')} saved in this browser. Export first if you want a backup.`),
@@ -885,7 +895,7 @@
   async function deleteAll() {
     const ok = await confirmDialog({
       title: 'Delete all data?',
-      body: h('p', {}, `All ${plural(state.doc.projects.length, 'project')} will be removed from this browser. This cannot be undone unless you have an export.`),
+      body: h('p', {}, `All ${plural(state.doc.projects.length, 'project')} and every agent slot record will be removed from this browser. This cannot be undone unless you have an export.`),
       confirmLabel: 'Delete all data',
       variant: 'danger',
     });
@@ -935,6 +945,8 @@
     if (parts[0] === 'project' && parts[1]) return { view: 'project', id: parts[1] };
     if (parts[0] === 'timeline') return { view: 'timeline' };
     if (parts[0] === 'decisions') return { view: 'decisions' };
+    if (parts[0] === 'agents') return { view: 'agents' };
+    if (parts[0] === 'agent' && parts[1]) return { view: 'agent', id: parts[1] };
     return { view: 'projects', params: new URLSearchParams(query || '') };
   }
 
@@ -965,7 +977,8 @@
 
   function updateNav(route) {
     document.querySelectorAll('[data-nav]').forEach((link) => {
-      const active = link.dataset.nav === (route.view === 'project' ? 'projects' : route.view);
+      const parent = { project: 'projects', agent: 'agents' }[route.view] || route.view;
+      const active = link.dataset.nav === parent;
       if (active) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     });
@@ -989,6 +1002,8 @@
     if (route.view === 'project') title = renderProject(main, route.id);
     else if (route.view === 'timeline') title = renderTimeline(main);
     else if (route.view === 'decisions') title = renderDecisions(main);
+    else if (route.view === 'agents') title = renderAgents(main);
+    else if (route.view === 'agent') title = renderAgent(main, route.id);
     else title = renderProjects(main, route);
     document.title = `${title} · Project Cockpit`;
     if (options && options.focusHeading) {
@@ -1136,9 +1151,9 @@
     return h('div', { class: 'item-actions' }, children);
   }
 
-  function milestoneItem(project, m, info, denominator) {
+  function milestoneItem(owner, m, info, denominator) {
     const share = denominator > 0 ? Math.round((m.weight / denominator) * 1000) / 10 : 0;
-    const k = `${project.id}:${m.id}`;
+    const k = `${owner.kind}:${owner.id}:${m.id}`;
     return h('li', { class: `item${info.counted ? ' is-counted' : ''}` },
       h('div', { class: 'item-head' },
         h('h3', { class: 'item-title' }, m.title),
@@ -1159,14 +1174,14 @@
       m.notes ? h('p', { class: 'notes' }, m.notes) : null,
       itemActions([
         m.status === 'complete'
-          ? button(['Verify now', sr(` (${m.title})`)], () => verifyMilestone(project, m), { key: `verify:${k}` })
+          ? button(['Verify now', sr(` (${m.title})`)], () => verifyMilestone(owner, m), { key: `verify:${k}` })
           : null,
-        button(['Edit', sr(` milestone: ${m.title}`)], () => milestoneForm(project, m), { key: `edit-m:${k}` }),
+        button(['Edit', sr(` milestone: ${m.title}`)], () => milestoneForm(owner, m), { key: `edit-m:${k}` }),
         button(['Delete', sr(` milestone: ${m.title}`)], () => confirmDelete('milestone', m.title, (doc) => {
-          const target = findProject(doc, project.id);
-          if (!target) return ['This project no longer exists.'];
+          const target = findOwner(doc, owner);
+          if (!target) return ['This project or slot no longer exists.'];
           target.milestones = target.milestones.filter((x) => x.id !== m.id);
-          target.blockers.forEach((b) => { if (b.milestoneId === m.id) b.milestoneId = null; });
+          (target.blockers || []).forEach((b) => { if (b.milestoneId === m.id) b.milestoneId = null; });
           touch(target);
           return null;
         }, { fallback: '#sec-milestones' }), { key: `del-m:${k}`, variant: 'danger' }),
@@ -1274,6 +1289,7 @@
     }
     const snap = Core.projectSnapshot(project, now());
     const p = snap.progress;
+    const owner = { kind: 'project', id: project.id };
     const denominator = p.denominator;
     const openBlockers = project.blockers.filter((b) => !b.resolved);
     const resolvedBlockers = project.blockers.filter((b) => b.resolved);
@@ -1320,9 +1336,9 @@
         h('p', {}, `Confidence is High when every counted milestone was verified in the last ${Core.FRESH_DAYS} days and nothing is untested, blocked or overdue; Low when a milestone claims Complete without counting or a counted one was verified more than ${Core.STALE_DAYS} days ago; otherwise Medium.`)));
 
     const milestonesPanel = h('section', { class: 'panel', 'aria-labelledby': 'sec-milestones' },
-      sectionHead('sec-milestones', `Milestones (${project.milestones.length})`, 'Add milestone', () => milestoneForm(project, null), `add-m:${project.id}`),
+      sectionHead('sec-milestones', `Milestones (${project.milestones.length})`, 'Add milestone', () => milestoneForm(owner, null), `add-m:project:${project.id}`),
       project.milestones.length
-        ? h('ol', { class: 'items', role: 'list' }, project.milestones.map((m, i) => milestoneItem(project, m, p.milestones[i], denominator)))
+        ? h('ol', { class: 'items', role: 'list' }, project.milestones.map((m, i) => milestoneItem(owner, m, p.milestones[i], denominator)))
         : h('p', { class: 'muted' }, 'No milestones yet.'));
 
     const blockersPanel = h('section', { class: 'panel', 'aria-labelledby': 'sec-blockers' },
@@ -1413,6 +1429,233 @@
       group('dec-deferred', 'Deferred', deferred, 'Nothing deferred.'),
       group('dec-decided', 'Decided', decided, 'No decisions recorded yet.'));
     return 'Decisions';
+  }
+
+  /* ---------- views: agent slots ---------- */
+
+  const AGENT_TONES = { running: 'info', queued: 'neutral', waiting: 'warn', offline: 'neutral' };
+  const agentStatusBadge = (status) => badge(`Recorded: ${Core.label(status)}`, AGENT_TONES[status] || 'neutral');
+  const providerBadge = (provider) => (provider ? badge(Core.label(provider), 'neutral') : null);
+
+  function fact(term, value) {
+    return h('div', {}, h('dt', {}, term), h('dd', {}, value));
+  }
+
+  function checkedText(iso) {
+    return iso ? [timestampEl(iso), ` (${Core.relativeTime(iso, now())})`] : 'Never';
+  }
+
+  function sessionLink(url) {
+    const safe = Core.checkSessionUrl(url).url;
+    if (!safe) return h('span', { class: 'muted' }, 'Link removed: not a safe https URL');
+    return h('a', { href: safe, target: '_blank', rel: 'noopener noreferrer', referrerpolicy: 'no-referrer' },
+      new URL(safe).hostname, sr(' (opens the external session in a new tab)'));
+  }
+
+  function connectionLine(view) {
+    return h('p', { class: `connection${view.bound ? '' : ' unbound'}` }, view.connection);
+  }
+
+  async function copyText(text, what) {
+    try {
+      await navigator.clipboard.writeText(text);
+      announce(`${what} copied to the clipboard`);
+    } catch (err) {
+      announce('Copy failed. Select the text and copy it manually.');
+    }
+  }
+
+  function slotForm(slot) {
+    formDialog({
+      title: `Edit ${slot.name} slot`,
+      description: 'Everything in a slot is recorded by you. Saving does not contact, start or check any session.',
+      submitLabel: 'Save slot',
+      fields: [
+        field({
+          name: 'sessionUrl', label: 'Session link', type: 'url', inputmode: 'url', value: slot.sessionUrl || '',
+          maxlength: Core.LIMITS.urlLength,
+          hint: 'https only. Leave empty when no session is running. Links containing tokens or keys are refused because exports are often shared.',
+        }),
+        field({
+          name: 'provider', label: 'Provider', type: 'select', value: slot.provider || '',
+          options: [['', 'Not set']].concat(enumOptions(Core.AGENT_PROVIDERS)),
+        }),
+        field({ name: 'model', label: 'Model', value: slot.model, maxlength: Core.LIMITS.model }),
+        field({
+          name: 'branch', label: 'Branch', value: slot.branch, maxlength: Core.LIMITS.branch,
+          hint: 'Git branch the session works on, for example feature/signup-form.',
+        }),
+        field({
+          name: 'status', label: 'Recorded status', type: 'select', value: slot.status, options: enumOptions(Core.AGENT_STATUSES),
+          hint: 'Without a session link only Queued or Offline are allowed. Changing the status or link clears the last check unless you record one now.',
+        }),
+        field({ name: 'statusNote', label: 'Status note', value: slot.statusNote }),
+        field({
+          name: 'handoff', label: 'Context handoff', type: 'textarea', rows: 8, maxlength: Core.LIMITS.handoff, value: slot.handoff,
+          hint: 'What the next session needs: goal, what is done, what is next, constraints. Never paste secrets: this is saved in this browser and included in exports.',
+        }),
+        field({ name: 'checkNow', label: 'Record a status check now (I looked at the session)', type: 'checkbox' }),
+      ],
+      onSubmit: (fd, form) => {
+        const invalid = (name) => form.querySelector(`[name="${name}"]`).setAttribute('aria-invalid', 'true');
+        const rawUrl = str(fd, 'sessionUrl');
+        let sessionUrl = null;
+        if (rawUrl) {
+          const check = Core.checkSessionUrl(rawUrl);
+          if (check.problem) {
+            invalid('sessionUrl');
+            return { errors: [`Session link ${check.problem}.`] };
+          }
+          sessionUrl = check.url;
+        }
+        const status = str(fd, 'status');
+        if (!sessionUrl && !Core.UNBOUND_AGENT_STATUSES.includes(status)) {
+          invalid('status');
+          return { errors: ['Recorded status: with no session link, choose Queued or Offline. Add the session link to record Running or Waiting.'] };
+        }
+        const branch = str(fd, 'branch');
+        if (branch && !Core.isValidBranchName(branch)) {
+          invalid('branch');
+          return { errors: ['Branch: use letters, digits, ".", "_", "-" and "/" only, for example feature/signup-form.'] };
+        }
+        const handoff = str(fd, 'handoff');
+        const checkNow = checked(fd, 'checkNow');
+        return commit((doc) => {
+          const target = findSlot(doc, slot.id);
+          if (!target) return ['This slot no longer exists.'];
+          const changed = target.status !== status || target.sessionUrl !== sessionUrl;
+          if (handoff !== target.handoff) target.handoffUpdatedAt = handoff ? now().toISOString() : null;
+          Object.assign(target, {
+            sessionUrl, provider: str(fd, 'provider') || null, model: str(fd, 'model'), branch, status,
+            statusNote: str(fd, 'statusNote'), handoff,
+          });
+          if (checkNow) target.verifiedAt = now().toISOString();
+          else if (changed) target.verifiedAt = null;
+          touch(target);
+          return null;
+        }, `${slot.name} slot saved`);
+      },
+    });
+  }
+
+  async function recordSlotCheck(slot) {
+    const ok = await confirmDialog({
+      title: 'Record status check?',
+      body: [
+        h('p', {}, slot.sessionUrl
+          ? `Confirm that you just looked at the ${slot.name} session and its status is still ${Core.label(slot.status)}.`
+          : `Confirm that the ${slot.name} slot still has no session and its status is still ${Core.label(slot.status)}.`),
+        h('p', {}, 'To change the status, use Edit slot instead.'),
+      ],
+      confirmLabel: 'Record check',
+    });
+    if (!ok) return;
+    commit((doc) => {
+      const target = findSlot(doc, slot.id);
+      if (!target) return ['This slot no longer exists.'];
+      target.verifiedAt = now().toISOString();
+      touch(target);
+      return null;
+    }, `Status check recorded for ${slot.name}`);
+  }
+
+  async function resetSlot(slot) {
+    const ok = await confirmDialog({
+      title: `Reset the ${slot.name} slot?`,
+      body: h('p', {}, 'The session link, provider, model, branch, status, milestones and handoff will be cleared so the slot can be reused. Export first if you want to keep them.'),
+      confirmLabel: 'Reset slot',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    commit((doc) => {
+      const target = findSlot(doc, slot.id);
+      if (!target) return ['This slot no longer exists.'];
+      Object.assign(target, Core.defaultAgentSlots().find((d) => d.id === slot.id));
+      touch(target);
+      return null;
+    }, `${slot.name} slot reset`);
+  }
+
+  function slotCard(slot, view) {
+    return h('article', { class: 'card', 'aria-labelledby': `slot-${slot.id}` },
+      h('div', { class: 'card-head' },
+        h('h2', { class: 'card-title', id: `slot-${slot.id}` },
+          h('a', { href: `#/agent/${encodeURIComponent(slot.id)}`, 'data-key': `slot:${slot.id}` }, slot.name)),
+        h('div', { class: 'badges' }, agentStatusBadge(slot.status), providerBadge(slot.provider))),
+      connectionLine(view),
+      slot.statusNote ? h('p', { class: 'card-summary' }, slot.statusNote) : null,
+      h('ul', { class: 'facts-inline' },
+        slot.model ? h('li', {}, `Model: ${slot.model}`) : null,
+        slot.branch ? h('li', {}, 'Branch: ', h('code', {}, slot.branch)) : null,
+        h('li', {}, slot.verifiedAt ? ['Last checked ', Core.relativeTime(slot.verifiedAt, now())] : 'Never checked')),
+      view.freshness ? h('p', { class: 'warning' }, view.freshness) : null,
+      view.progress.denominator > 0 ? progressSummary(view.progress) : h('p', { class: 'muted small' }, 'No slot milestones'));
+  }
+
+  function renderAgents(main) {
+    main.append(pageTitle('Agent slots'),
+      h('p', { class: 'lede' }, 'Records you keep about Claude, Codex or other agent sessions that run elsewhere. Project Cockpit does not connect to, start or monitor any session: every link, status and check here was entered by a person.'));
+    main.append(h('ul', { class: 'card-grid', role: 'list' },
+      state.doc.agentSlots.map((slot) => h('li', {}, slotCard(slot, Core.agentSlotView(slot, now()))))));
+    return 'Agent slots';
+  }
+
+  function renderAgent(main, id) {
+    const slot = findSlot(state.doc, id);
+    main.append(h('p', { class: 'crumb' }, h('a', { href: '#/agents' }, h('span', { 'aria-hidden': 'true' }, '← '), 'All agent slots')));
+    if (!slot) {
+      main.append(pageTitle('Slot not found'),
+        h('p', {}, `The available slots are ${Core.AGENT_SLOTS.map((d) => d.name).join(', ')}.`));
+      return 'Slot not found';
+    }
+    const view = Core.agentSlotView(slot, now());
+    const p = view.progress;
+    const owner = { kind: 'slot', id: slot.id };
+    main.append(h('header', { class: 'project-head' },
+      pageTitle(`${slot.name} slot`),
+      h('div', { class: 'badges' }, agentStatusBadge(slot.status), providerBadge(slot.provider)),
+      connectionLine(view),
+      view.freshness ? h('p', { class: 'warning' }, view.freshness) : null,
+      h('div', { class: 'button-row' },
+        button('Edit slot', () => slotForm(slot), { key: `edit-slot:${slot.id}`, variant: 'primary' }),
+        button('Record status check', () => recordSlotCheck(slot), { key: `check-slot:${slot.id}` }),
+        button(['Reset slot', sr(` (${slot.name})`)], () => resetSlot(slot), { key: `reset-slot:${slot.id}`, variant: 'danger' }))));
+
+    const sessionPanel = h('section', { class: 'panel', 'aria-labelledby': 'sec-session' },
+      h('h2', { id: 'sec-session', tabindex: '-1' }, 'Session record'),
+      h('dl', { class: 'facts' },
+        fact('Session link', view.bound ? sessionLink(slot.sessionUrl) : 'No session connected'),
+        fact('Provider', slot.provider ? Core.label(slot.provider) : 'Not set'),
+        fact('Model', slot.model || 'Not set'),
+        fact('Branch', slot.branch ? h('code', {}, slot.branch) : 'Not set'),
+        fact('Recorded status', [Core.label(slot.status), slot.statusNote ? h('span', { class: 'muted' }, ` · ${slot.statusNote}`) : null]),
+        fact('Last checked', checkedText(slot.verifiedAt)),
+        fact('Record updated', slot.updatedAt ? Core.relativeTime(slot.updatedAt, now()) : 'Never')),
+      h('p', { class: 'muted small' }, 'Opening the link takes you to the external session. Nothing is fetched from it.'));
+
+    const handoffPanel = h('section', { class: 'panel', 'aria-labelledby': 'sec-handoff' },
+      h('div', { class: 'section-head' },
+        h('h2', { id: 'sec-handoff', tabindex: '-1' }, 'Context handoff'),
+        slot.handoff ? button('Copy handoff', () => copyText(slot.handoff, 'Handoff'), { key: `copy-handoff:${slot.id}`, variant: 'quiet' }) : null),
+      slot.handoff
+        ? [h('p', { class: 'handoff' }, slot.handoff),
+          slot.handoffUpdatedAt ? h('p', { class: 'muted small' }, 'Saved ', timestampEl(slot.handoffUpdatedAt)) : null]
+        : h('p', { class: 'muted' }, 'No handoff saved. Use Edit slot to write the context the next session should start from.'));
+
+    const milestonesPanel = h('section', { class: 'panel', 'aria-labelledby': 'sec-milestones' },
+      sectionHead('sec-milestones', `Slot milestones (${slot.milestones.length})`, 'Add milestone', () => milestoneForm(owner, null), `add-m:slot:${slot.id}`),
+      p.denominator > 0 ? h('div', { class: 'progress-big' },
+        h('p', { class: 'fraction' }, h('strong', {}, `${p.numeratorText} / ${p.denominatorText}`), ` weight verified complete (${p.percent}%)`),
+        progressBar(p.percent),
+        h('p', {}, confidenceChip(p.confidence))) : null,
+      slot.milestones.length
+        ? h('ol', { class: 'items', role: 'list' }, slot.milestones.map((m, i) => milestoneItem(owner, m, p.milestones[i], p.denominator)))
+        : h('p', { class: 'muted' }, 'No milestones for this slot yet. They follow the same rule as project milestones.'));
+
+    main.append(h('div', { class: 'detail-grid' },
+      h('div', { class: 'detail-main' }, sessionPanel, milestonesPanel),
+      h('div', { class: 'detail-side' }, handoffPanel)));
+    return `${slot.name} slot`;
   }
 
   /* ---------- startup ---------- */
