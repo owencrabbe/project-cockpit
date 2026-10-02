@@ -1684,9 +1684,15 @@
     });
     $('#dialog').addEventListener('close', () => {
       // close events are queued; ignore a late one if another dialog is already open.
-      if ($('#dialog').open) return;
-      clear($('#dialog'));
-      restoreFocus();
+      const dialog = $('#dialog');
+      if (dialog.open) return;
+      clear(dialog);
+      // By now the browser has usually returned focus to the opener, and the user may
+      // already have moved on. Only step in when focus was lost, for example because a
+      // save re-rendered the page and removed the opener; never pull focus back.
+      const active = document.activeElement;
+      if (!active || active === document.body || !active.isConnected) restoreFocus();
+      else state.dialogReturnKey = null;
     });
     $('.skip-link').addEventListener('click', (event) => {
       event.preventDefault();

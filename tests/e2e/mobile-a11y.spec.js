@@ -202,6 +202,30 @@ test('keyboard: skip link, route focus, dialog focus trap and focus return', asy
   await app.assertClean();
 });
 
+test('focus moved right after a dialog closes is not pulled back to the opener', async ({ page }) => {
+  const app = await openApp(page);
+  await loadSample(page);
+  await page.getByRole('link', { name: 'Garden plot signup site' }).click();
+  await page.getByRole('button', { name: 'Add milestone' }).click();
+  await expect(page.getByRole('dialog', { name: 'Add milestone' })).toBeVisible();
+  // Close the dialog and move focus in the same task, before the browser delivers the
+  // queued "close" event. That is the timing a quick keyboard user or a busy event loop
+  // produces; the close handler must not yank focus back to "Add milestone".
+  const focused = await page.evaluate(async () => {
+    const dialog = document.getElementById('dialog');
+    const closed = new Promise((resolve) => dialog.addEventListener('close', resolve, { once: true }));
+    dialog.close();
+    document.querySelector('#data-menu summary').focus();
+    await closed;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return document.activeElement.textContent.trim();
+  });
+  expect(focused).toBe('Data');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('button', { name: 'Export JSON' })).toBeVisible();
+  await app.assertClean();
+});
+
 test('form errors are announced and invalid fields are marked', async ({ page }) => {
   const app = await openApp(page);
   await loadSample(page);
