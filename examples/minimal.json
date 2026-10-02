@@ -1,0 +1,57 @@
+{
+  "schema": "project-cockpit",
+  "version": 1,
+  "projects": [
+    {
+      "id": "example-project",
+      "name": "Example project",
+      "summary": "A minimal, fictional project to copy when writing your own import file.",
+      "owner": "You",
+      "status": "active",
+      "priority": "medium",
+      "tags": ["example"],
+      "startDate": "2026-01-05",
+      "dueDate": "2026-03-31",
+      "milestones": [
+        {
+          "id": "m-plan",
+          "title": "Plan agreed",
+          "weight": 25,
+          "status": "complete",
+          "verifiedAt": "2026-01-20T15:00:00Z",
+          "evidence": [{ "label": "Plan document", "url": "https://example.com/plan" }]
+        },
+        {
+          "id": "m-build",
+          "title": "First version built",
+          "weight": 50,
+          "status": "untested",
+          "dueDate": "2026-02-28"
+        },
+        {
+          "id": "m-ship",
+          "title": "Shipped",
+          "weight": 25,
+          "status": "not_started",
+          "dueDate": "2026-03-31"
+        }
+      ],
+      "blockers": [
+        { "id": "b-review", "description": "Waiting for a review slot.", "owner": "Reviewer", "since": "2026-02-10", "milestoneId": "m-build", "resolved": false }
+      ],
+      "nextActions": [
+        { "id": "a-test", "text": "Write the test checklist for the first version", "owner": "You", "dueDate": "2026-02-20", "done": false }
+      ],
+      "decisions": [
+        {
+          "id": "d-scope",
+          "question": "Cut the export feature from the first release?",
+          "context": "It would save about a week.",
+          "options": ["Cut it", "Keep it"],
+          "status": "open",
+          "neededBy": "2026-02-15"
+        }
+      ]
+    }
+  ]
+}
