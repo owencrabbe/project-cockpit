@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Local-first project dashboard with evidence-based weighted milestone progress.">
+  <title>Project Cockpit</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="app-header">
+    <div class="header-row">
+      <p class="brand"><a href="#/">Project Cockpit</a></p>
+      <div class="header-actions">
+        <button type="button" class="btn btn-primary" id="btn-new-project">New project</button>
+        <details class="menu" id="data-menu">
+          <summary class="btn">Data</summary>
+          <div class="menu-panel">
+            <button type="button" class="btn btn-quiet" id="btn-import">Import JSON</button>
+            <button type="button" class="btn btn-quiet" id="btn-export">Export JSON</button>
+            <button type="button" class="btn btn-quiet" id="btn-sample">Load sample data</button>
+            <button type="button" class="btn btn-quiet btn-danger" id="btn-delete-all">Delete all data</button>
+          </div>
+        </details>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Views">
+      <ul role="list">
+        <li><a href="#/" data-nav="projects">Projects</a></li>
+        <li><a href="#/timeline" data-nav="timeline">Timeline</a></li>
+        <li><a href="#/decisions" data-nav="decisions">Decisions</a></li>
+        <li><a href="#/agents" data-nav="agents">Agents</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div id="notices" class="notices"></div>
+  <div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <main id="main" tabindex="-1">
+    <noscript><p>Project Cockpit needs JavaScript enabled to run.</p></noscript>
+  </main>
+
+  <footer class="app-footer">
+    <p>Data is stored in: <span id="storage-name">loading</span>. Nothing is sent to a server.</p>
+    <p>Project Cockpit is open source under the MIT License. Independent project; not affiliated with, endorsed by or sponsored by OpenAI or any other company.</p>
+  </footer>
+
+  <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
+  <input type="file" id="import-file" accept=".json,application/json" hidden>
+
+  <script src="src/core.js"></script>
+  <script src="src/storage.js"></script>
+  <script src="src/sample-data.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>
